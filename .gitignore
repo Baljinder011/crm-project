@@ -1,0 +1,26 @@
+# Ignore Node.js dependencies
+Frontend/node_modules/
+Backned/node_modules/
+
+Backned/uploads/
+uploads/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+Frontend/.env
+Backend/.env
+.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
