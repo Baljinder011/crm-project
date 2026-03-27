@@ -1,8 +1,7 @@
 # Ignore Node.js dependencies
-Frontend/node_modules/
-Backned/node_modules/
-
-Backned/uploads/
+frontend/node_modules/
+backned/node_modules/
+backned/uploads/
 uploads/
 
 # Logs
@@ -13,8 +12,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables
-Frontend/.env
-Backend/.env
+frontend/.env
+backend/.env
 .env
 
 # OS-specific files
