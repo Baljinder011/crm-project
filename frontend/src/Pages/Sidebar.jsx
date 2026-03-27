@@ -1,19 +1,21 @@
 import React from 'react';
-import { LayoutDashboard, Users, Calendar, BookOpen, BarChart3, Settings, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Calendar, BookOpen, BarChart3, Settings, LogOut, Bell } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';  
 import { useAuth } from '../context/AuthContext';
 
 const primaryNav = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, active: true },
-  { id: 'leads', label: 'Leads', icon: Users },
-  { id: 'meetings', label: 'Meetings', icon: Calendar },
-  { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },  
+  { id: 'leads', label: 'Leads', icon: Users, path: '/leads' },  
+  { id: 'meetings', label: 'Meetings', icon: Calendar, path: '/meetings' },  
+  { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen, path: '/knowledge' }, 
+  { id: 'reports', label: 'Reports', icon: BarChart3, path: '/reports' },  
+  { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },  
+  { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },  
 ];
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuth();
 
   const handleLogout = () => {
@@ -22,7 +24,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="flex min-h-screen w-72 flex-col gap-10 border-r border-slate-200/70 bg-white/70 px-6 py-8 backdrop-blur-xl">
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-72 flex-col gap-10 border-r border-slate-200/70 bg-white/80 px-6 py-8 backdrop-blur-xl">
       <div className="flex items-center gap-2">
         <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-[#2596be] to-[#670bb8] font-bold text-white">
           C
@@ -38,11 +40,13 @@ const Sidebar = () => {
           <nav className="flex flex-col gap-2">
             {primaryNav.map((item) => {
               const Icon = item.icon;
+              const isActive = location.pathname === item.path;  
               return (
                 <button
                   key={item.id}
+                  onClick={() => navigate(item.path)}  
                   className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                    item.active
+                    isActive
                       ? 'bg-gradient-to-br from-[#2596be] to-[#670bb8] text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                   }`}

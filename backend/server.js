@@ -1,8 +1,11 @@
 require('dotenv').config();
 const app = require('./src/app');
 const { pool, testDatabaseConnection } = require('./src/config/db');
+const cors = require("cors")
 
 const PORT = process.env.PORT || 5000;
+app.use(cors())
+
 
 async function startServer() {
   try {
