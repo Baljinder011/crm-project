@@ -1,7 +1,7 @@
 # Ignore Node.js dependencies
 frontend/node_modules/
-backned/node_modules/
-backned/uploads/
+backend/node_modules/
+backend/uploads/
 uploads/
 
 # Logs
