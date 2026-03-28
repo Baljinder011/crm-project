@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Building, User, DollarSign, Calendar, Search, ChevronLeft, ChevronRight, Plus, FileUp, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { apiRequest } from '../services/apiClient';
+import { useAuth } from '../context/AuthContext';
 
 const initialLeads = [
   { id: '1', title: 'Test Lead 2', company: 'ABC', status: 'new', amount: '1,000', date: '03/05/2026' },
@@ -19,6 +21,7 @@ const stages = [
 ];
 
 const Pipeline = () => {
+  const { token } = useAuth();
   const [leads, setLeads] = useState(initialLeads);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState('board'); // 'board' or 'table'
@@ -205,6 +208,45 @@ const Pipeline = () => {
     setEndDate(date);
     setRangeLabel('Custom');
   };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const formatBackendDate = (value) => {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${month}/${day}/${year}`;
+    };
+
+    const fetchContacts = async () => {
+      try {
+        const response = await apiRequest('/contacts', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const mapped = (response?.contacts || []).map((contact) => ({
+          id: String(contact.id),
+          title: contact.full_name || contact.email || 'Unnamed Lead',
+          company: contact.company || 'Unknown',
+          status: 'new',
+          amount: contact.amount ? String(contact.amount) : '0',
+          date: formatBackendDate(contact.created_at),
+        }));
+
+        setLeads(mapped);
+      } catch (error) {
+        console.error('Failed to load contacts:', error);
+      }
+    };
+
+    fetchContacts();
+  }, [token]);
 
   const onDragEnd = (result) => {
     const { destination, draggableId } = result;
