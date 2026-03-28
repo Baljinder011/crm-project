@@ -13,6 +13,7 @@ import KnowledgeBase from './Pages/KnowledgeBase';
 import Reports from './Pages/Reports';
 import Settings from './Pages/Settings';
 import Notifications from './Pages/Notifications';
+import Pipeline from './Pages/Pipeline';
 
 function App() {
   return (
@@ -87,6 +88,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Reports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pipeline"
+          element={
+            <ProtectedRoute>
+              <Pipeline />
             </ProtectedRoute>
           }
         />
