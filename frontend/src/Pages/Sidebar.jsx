@@ -1,16 +1,17 @@
 import React from 'react';
-import { LayoutDashboard, Users, Calendar, BookOpen, BarChart3, Settings, LogOut, Bell } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';  
+import { LayoutDashboard, Users, Calendar, BookOpen, BarChart3, Settings, LogOut, Bell, GitBranch } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const primaryNav = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },  
-  { id: 'leads', label: 'Leads', icon: Users, path: '/leads' },  
-  { id: 'meetings', label: 'Meetings', icon: Calendar, path: '/meetings' },  
-  { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen, path: '/knowledge' }, 
-  { id: 'reports', label: 'Reports', icon: BarChart3, path: '/reports' },  
-  { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },  
-  { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },  
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { id: 'leads', label: 'Leads', icon: Users, path: '/leads' },
+  { id: 'meetings', label: 'Meetings', icon: Calendar, path: '/meetings' },
+  { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen, path: '/knowledge' },
+  { id: 'reports', label: 'Reports', icon: BarChart3, path: '/reports' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },
+  { id: 'pipeline', label: 'Contacts', icon: GitBranch, path: '/pipeline' },
+  { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
 ];
 
 const Sidebar = () => {
@@ -40,16 +41,15 @@ const Sidebar = () => {
           <nav className="flex flex-col gap-2">
             {primaryNav.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;  
+              const isActive = location.pathname === item.path;
               return (
                 <button
                   key={item.id}
-                  onClick={() => navigate(item.path)}  
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                    isActive
+                  onClick={() => navigate(item.path)}
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${isActive
                       ? 'bg-gradient-to-br from-[#2596be] to-[#670bb8] text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <Icon size={18} />
                   {item.label}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Bell, ChevronDown, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../Pages/Sidebar';
@@ -8,6 +8,29 @@ const AppLayout = ({ eyebrow = 'CRM Overview', title = 'Dashboard', description,
   const { user } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
+  const notificationsRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!showNotifications) return;
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showNotifications]);
 
   const userInitials = String(user?.name || 'U')
     .split(' ')
@@ -69,7 +92,7 @@ const AppLayout = ({ eyebrow = 'CRM Overview', title = 'Dashboard', description,
                   className="w-full rounded-full border border-slate-200 bg-white/90 py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </div>
-              <div className="relative">
+              <div className="relative" ref={notificationsRef}>
                 <button
                   type="button"
                   onClick={() => setShowNotifications((prev) => !prev)}
