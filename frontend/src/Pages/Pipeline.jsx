@@ -136,7 +136,7 @@ function DetailBox({ icon: Icon, title, children, className = '' }) {
 function LeadDetailPanel({ lead, onRefresh, busyId, onEnrich }) {
   if (!lead) {
     return (
-      <div className="sticky top-6 rounded-[28px] border border-dashed border-slate-300 bg-white/80 p-8 text-sm text-slate-500 shadow-sm">
+      <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/80 p-8 text-sm text-slate-500 shadow-sm xl:max-h-[calc(100vh-18rem)] xl:overflow-y-auto xl:pr-2">
         Select a contact to see the AI brief.
       </div>
     );
@@ -145,7 +145,7 @@ function LeadDetailPanel({ lead, onRefresh, busyId, onEnrich }) {
   const scoreWidth = `${Math.max(0, Math.min(100, lead.ai.score || 0))}%`;
 
   return (
-    <div className="sticky top-6 space-y-5">
+    <div className="space-y-5 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:pr-2">
       <div className="rounded-[30px] border border-slate-200/80 bg-white/95 p-6 shadow-sm">
         <div className="flex flex-col gap-5">
           <div className="flex items-start justify-between gap-4">
@@ -763,8 +763,8 @@ const Pipeline = () => {
           ) : null}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-          <div className="space-y-6 min-w-0">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px] xl:items-start">
+          <div className="min-w-0 space-y-6 xl:sticky xl:top-6 xl:self-start">
             <div className="rounded-[30px] border border-slate-200/80 bg-white/95 p-5 shadow-sm">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
