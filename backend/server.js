@@ -1,19 +1,23 @@
 require('dotenv').config();
 const app = require('./src/app');
 const { pool, testDatabaseConnection } = require('./src/config/db');
-const cors = require("cors")
+const { startLeadEnrichmentWorker } = require('./src/workers/leadEnrichmentWorker');
+const { runMigrations } = require('./runMigrations');
 
 const PORT = process.env.PORT || 5000;
-app.use(cors())
-
 
 async function startServer() {
   try {
     await testDatabaseConnection();
- 
+    await runMigrations();
+
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+
+    if (String(process.env.RUN_LEAD_WORKER || 'true') !== 'false') {
+      startLeadEnrichmentWorker();
+    }
 
     const shutdown = async (signal) => {
       console.log(`\n${signal} received. Closing server...`);

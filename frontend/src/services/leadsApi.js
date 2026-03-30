@@ -1,8 +1,8 @@
 import { apiRequest } from './apiClient';
 
-export const contactsApi = {
-  getContacts(token) {
-    return apiRequest('/contacts', {
+export const leadsApi = {
+  getLeads(token) {
+    return apiRequest('/leads', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -10,8 +10,8 @@ export const contactsApi = {
     });
   },
 
-  getContactById(id, token) {
-    return apiRequest(`/contacts/${id}`, {
+  getLeadById(id, token) {
+    return apiRequest(`/leads/${id}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -19,8 +19,8 @@ export const contactsApi = {
     });
   },
 
-  enrichContact(id, token) {
-    return apiRequest(`/contacts/${id}/enrich`, {
+  enrichLead(id, token) {
+    return apiRequest(`/leads/${id}/enrich`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -29,7 +29,7 @@ export const contactsApi = {
   },
 
   enrichAll(token) {
-    return apiRequest('/contacts/enrich-all', {
+    return apiRequest('/leads/enrich-all', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
