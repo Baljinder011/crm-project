@@ -41,7 +41,9 @@ const Sidebar = () => {
           <nav className="flex flex-col gap-2">
             {primaryNav.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive =
+                location.pathname === item.path ||
+                location.pathname.startsWith(`${item.path}/`);
               return (
                 <button
                   key={item.id}

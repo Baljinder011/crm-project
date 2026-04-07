@@ -14,6 +14,7 @@ import Reports from './Pages/Reports';
 import Settings from './Pages/Settings';
 import Notifications from './Pages/Notifications';
 import Pipeline from './Pages/Pipeline';
+import LeadDetail from './Pages/LeadDetail';
 
 function App() {
   return (
@@ -96,6 +97,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Pipeline />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pipeline/:id"
+          element={
+            <ProtectedRoute>
+              <LeadDetail />
             </ProtectedRoute>
           }
         />
