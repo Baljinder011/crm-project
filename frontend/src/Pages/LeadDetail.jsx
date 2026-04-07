@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle,
   Brain,
@@ -68,6 +68,7 @@ function DetailBox({ icon: Icon, title, children, className = '' }) {
 const LeadDetail = () => {
   const { token } = useAuth();
   const params = useParams();
+  const navigate = useNavigate();
   const leadId = params.id || params.contactId;
 
   const [lead, setLead] = useState(null);
@@ -192,6 +193,12 @@ const LeadDetail = () => {
 
                     <div className="flex shrink-0 flex-col gap-3">
                       <button
+                        onClick={() => navigate('/pipeline')}
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
+                      >
+                        Back
+                      </button>
+                      <button
                         onClick={() => loadLead(true)}
                         className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
                       >
@@ -274,16 +281,18 @@ const LeadDetail = () => {
                 </div>
               </div>
 
-              <DetailBox icon={Brain} title="AI Summary">
-                {lead.ai?.ai_summary || 'No AI summary available yet.'}
-              </DetailBox>
+              <div className="grid gap-5 lg:grid-cols-2">
+                <DetailBox icon={Brain} title="AI Summary" className="h-full">
+                  {lead.ai?.ai_summary || 'No AI summary available yet.'}
+                </DetailBox>
 
-              <DetailBox icon={Target} title="Recommended Action">
-                {lead.ai?.recommended_action || 'No recommendation available yet.'}
-              </DetailBox>
+                <DetailBox icon={Target} title="Recommended Action" className="h-full">
+                  {lead.ai?.recommended_action || 'No recommendation available yet.'}
+                </DetailBox>
+              </div>
 
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1">
-                <DetailBox icon={AlertCircle} title="Pain Points">
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                <DetailBox icon={AlertCircle} title="Pain Points" className="h-full">
                   {(lead.ai?.pain_points || []).length ? (
                     <div className="flex flex-wrap gap-2">
                       {lead.ai?.pain_points.map((point) => (
@@ -300,7 +309,7 @@ const LeadDetail = () => {
                   )}
                 </DetailBox>
 
-                <DetailBox icon={Calendar} title="Follow-up Task">
+                <DetailBox icon={Calendar} title="Follow-up Task" className="h-full">
                   {lead.task ? (
                     <div className="space-y-2">
                       <div className="font-semibold text-slate-800">{lead.task.title}</div>
@@ -315,54 +324,56 @@ const LeadDetail = () => {
                     <span>Task will appear after AI enrichment finishes.</span>
                   )}
                 </DetailBox>
+
+                <DetailBox icon={User} title="Contact Details" className="h-full">
+                  <div className="space-y-2">
+                    <p>
+                      <span className="font-semibold text-slate-700">Email:</span> {lead.email || '—'}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-700">Phone:</span> {lead.phone || '—'}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-700">Address:</span> {lead.address || '—'}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-700">Created:</span>{' '}
+                      {formatDateTime(lead.created_at)}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-700">Last AI Run:</span>{' '}
+                      {formatDateTime(lead.ai?.last_enriched_at)}
+                    </p>
+                  </div>
+                </DetailBox>
               </div>
 
-              <DetailBox icon={Search} title="Research Sources">
-                {(lead.ai?.research_sources || []).length ? (
-                  <div className="space-y-3">
-                    {lead.ai?.research_sources.map((source, index) => (
-                      <a
-                        key={`${source.url}-${index}`}
-                        href={source.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-3 transition hover:border-indigo-200 hover:bg-white"
-                      >
-                        <div className="text-sm font-semibold text-slate-800">{source.title}</div>
-                        <div className="mt-1 truncate text-xs text-slate-500">{source.url}</div>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <span>No research sources yet.</span>
-                )}
-              </DetailBox>
+              <div className="grid gap-5 lg:grid-cols-2">
+                <DetailBox icon={Search} title="Research Sources" className="h-full">
+                  {(lead.ai?.research_sources || []).length ? (
+                    <div className="space-y-3">
+                      {lead.ai?.research_sources.map((source, index) => (
+                        <a
+                          key={`${source.url}-${index}`}
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-3 transition hover:border-indigo-200 hover:bg-white"
+                        >
+                          <div className="text-sm font-semibold text-slate-800">{source.title}</div>
+                          <div className="mt-1 truncate text-xs text-slate-500">{source.url}</div>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <span>No research sources yet.</span>
+                  )}
+                </DetailBox>
 
-              <DetailBox icon={Mail} title="Original Form Message">
-                {lead.message || 'No message provided.'}
-              </DetailBox>
-
-              <DetailBox icon={User} title="Contact Details">
-                <div className="space-y-2">
-                  <p>
-                    <span className="font-semibold text-slate-700">Email:</span> {lead.email || '—'}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-700">Phone:</span> {lead.phone || '—'}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-700">Address:</span> {lead.address || '—'}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-700">Created:</span>{' '}
-                    {formatDateTime(lead.created_at)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-700">Last AI Run:</span>{' '}
-                    {formatDateTime(lead.ai?.last_enriched_at)}
-                  </p>
-                </div>
-              </DetailBox>
+                <DetailBox icon={Mail} title="Original Form Message" className="h-full">
+                  {lead.message || 'No message provided.'}
+                </DetailBox>
+              </div>
 
               {lead.ai?.error_message ? (
                 <div className="rounded-3xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
