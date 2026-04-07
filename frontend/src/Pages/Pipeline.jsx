@@ -46,6 +46,22 @@ const statusStyles = {
   failed: 'bg-rose-50 text-rose-700 border border-rose-200',
 };
 
+
+const AI_PENDING_STATUSES = new Set(['not_started', 'queued', 'processing']);
+const AI_MANUAL_ACTION_STATUSES = new Set(['failed', 'not_started']);
+
+function canManuallyRunAi(status) {
+  return AI_MANUAL_ACTION_STATUSES.has(String(status || '').toLowerCase());
+}
+
+function isAiPending(status) {
+  return AI_PENDING_STATUSES.has(String(status || '').toLowerCase());
+}
+
+function getAiActionLabel(status) {
+  return String(status || '').toLowerCase() === 'failed' ? 'Run AI Again' : 'Run AI';
+}
+
 function formatBackendDate(value) {
   if (!value) return '';
   const date = new Date(value);
@@ -120,7 +136,8 @@ function comparePipelineOrder(a, b) {
   return String(a?.id || '').localeCompare(String(b?.id || ''));
 }
 
-function StatCard({ icon: Icon, label, value, subText }) {
+function StatCard({ icon, label, value, subText }) {
+  const Icon = icon;
   return (
     <div className="rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -202,18 +219,26 @@ function LeadDetailPanel({ lead, onRefresh, busyId, onEnrich }) {
                 Refresh
               </button>
 
-              <button
-                onClick={() => onEnrich(lead.contactId)}
-                disabled={busyId === lead.contactId}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#2596be] to-[#6d28d9] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {busyId === lead.contactId ? (
-                  <LoaderCircle size={15} className="animate-spin" />
-                ) : (
-                  <Sparkles size={15} />
-                )}
-                Re-run AI
-              </button>
+              {canManuallyRunAi(lead.ai.status) ? (
+                <button
+                  onClick={() => onEnrich(lead.contactId)}
+                  disabled={busyId === lead.contactId}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#2596be] to-[#6d28d9] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {busyId === lead.contactId ? (
+                    <LoaderCircle size={15} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={15} />
+                  )}
+                  {getAiActionLabel(lead.ai.status)}
+                </button>
+              ) : (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-500">
+                  {isAiPending(lead.ai.status)
+                    ? 'AI will run automatically for this lead.'
+                    : 'AI enrichment already completed.'}
+                </div>
+              )}
             </div>
           </div>
 
@@ -401,7 +426,6 @@ const Pipeline = () => {
 
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
-  const [bulkBusy, setBulkBusy] = useState(false);
   const [error, setError] = useState('');
   const [selectedLeadId, setSelectedLeadId] = useState(null);
 
@@ -627,7 +651,7 @@ const Pipeline = () => {
     if (!selectedLead) return;
 
     const currentStatus = selectedLead.ai?.status;
-    if (currentStatus !== 'queued' && currentStatus !== 'processing') return;
+    if (!isAiPending(currentStatus)) return;
 
     const intervalId = setInterval(() => {
       loadContacts(false);
@@ -761,18 +785,6 @@ const Pipeline = () => {
     }
   }
 
-  async function handleEnrichAll() {
-    try {
-      setBulkBusy(true);
-      setError('');
-      await contactsApi.enrichAll(token);
-      await loadContacts(false);
-    } catch (enrichError) {
-      setError(enrichError.message || 'Failed to queue AI enrichment jobs.');
-    } finally {
-      setBulkBusy(false);
-    }
-  }
 
   const filteredLeads = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -836,14 +848,9 @@ const Pipeline = () => {
               </p>
             </div>
 
-            <button
-              onClick={handleEnrichAll}
-              disabled={bulkBusy}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-full bg-gradient-to-r from-[#2596be] to-[#6d28d9] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {bulkBusy ? <LoaderCircle size={16} className="animate-spin" /> : <Sparkles size={16} />}
-              Enrich All Contacts
-            </button>
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-700">
+              New leads now run AI automatically after they are received.
+            </div>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -1236,22 +1243,28 @@ const Pipeline = () => {
                                               {lead.ai.intent || 'No intent yet'}
                                             </div>
 
-                                            <button
-                                              type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleEnrich(lead.contactId);
-                                              }}
-                                              disabled={busyId === lead.contactId}
-                                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-70"
-                                            >
-                                              {busyId === lead.contactId ? (
-                                                <LoaderCircle size={13} className="animate-spin" />
-                                              ) : (
-                                                <Sparkles size={13} />
-                                              )}
-                                              AI
-                                            </button>
+                                            {canManuallyRunAi(lead.ai.status) ? (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleEnrich(lead.contactId);
+                                                }}
+                                                disabled={busyId === lead.contactId}
+                                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-70"
+                                              >
+                                                {busyId === lead.contactId ? (
+                                                  <LoaderCircle size={13} className="animate-spin" />
+                                                ) : (
+                                                  <Sparkles size={13} />
+                                                )}
+                                                {String(lead.ai.status || '').toLowerCase() === 'failed' ? 'Retry AI' : 'Run AI'}
+                                              </button>
+                                            ) : (
+                                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-500">
+                                                {isAiPending(lead.ai.status) ? 'Auto AI' : 'Done'}
+                                              </span>
+                                            )}
                                           </div>
                                         </div>
                                       )}

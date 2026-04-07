@@ -256,8 +256,27 @@ async function updateContactPipeline(contactId, stage, order) {
   return rows[0] || null;
 }
 
+async function listAutoEnrichmentCandidates(limit = 25) {
+  const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 25;
+
+  const { rows } = await pool.query(
+    `
+      SELECT c.id
+      FROM contacts c
+      LEFT JOIN lead_ai_data aid ON aid.contact_id = c.id
+      WHERE aid.contact_id IS NULL OR aid.status = 'not_started'
+      ORDER BY c.created_at ASC, c.id ASC
+      LIMIT $1
+    `,
+    [safeLimit]
+  );
+
+  return rows.map((row) => Number(row.id)).filter(Number.isFinite);
+}
+
 module.exports = {
   getAllContacts,
   getContactById,
   updateContactPipeline,
+  listAutoEnrichmentCandidates,
 };

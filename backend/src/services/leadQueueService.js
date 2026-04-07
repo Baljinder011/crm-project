@@ -29,6 +29,12 @@ function getLeadEnrichmentQueue() {
 async function enqueueLeadEnrichment(contactId, requestedBy = 'system') {
   const normalizedContactId = Number(contactId);
   const leadQueue = getLeadEnrichmentQueue();
+  const jobId = `contact-${normalizedContactId}`;
+
+  const existingJob = await leadQueue.getJob(jobId);
+  if (existingJob) {
+    return existingJob;
+  }
 
   await upsertLeadAiData(normalizedContactId, {
     status: 'queued',
@@ -47,7 +53,7 @@ async function enqueueLeadEnrichment(contactId, requestedBy = 'system') {
     'enrich-contact',
     { contactId: normalizedContactId, requestedBy },
     {
-      jobId: `contact-${normalizedContactId}-${Date.now()}`,
+      jobId,
     }
   );
 }

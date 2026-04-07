@@ -2,6 +2,7 @@ require('dotenv').config();
 const app = require('./src/app');
 const { pool, testDatabaseConnection } = require('./src/config/db');
 const { startLeadEnrichmentWorker } = require('./src/workers/leadEnrichmentWorker');
+const { startLeadAutoEnrichmentScheduler } = require('./src/services/leadAutoEnrichmentService');
 const { runMigrations } = require('./runMigrations');
 
 const PORT = process.env.PORT || 5000;
@@ -17,6 +18,10 @@ async function startServer() {
 
     if (String(process.env.RUN_LEAD_WORKER || 'true') !== 'false') {
       startLeadEnrichmentWorker();
+    }
+
+    if (String(process.env.RUN_LEAD_AUTO_ENRICH_SCHEDULER || 'true') !== 'false') {
+      startLeadAutoEnrichmentScheduler();
     }
 
     const shutdown = async (signal) => {
