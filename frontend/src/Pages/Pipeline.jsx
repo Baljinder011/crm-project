@@ -64,6 +64,9 @@ function formatDateTime(value) {
 }
 
 function mapContactToPipelineItem(contact) {
+  const parsedOrder = Number(contact.pipeline_order);
+  const pipelineOrder = Number.isFinite(parsedOrder) ? parsedOrder : null;
+
   return {
     id: String(contact.id),
     contactId: Number(contact.id),
@@ -75,7 +78,8 @@ function mapContactToPipelineItem(contact) {
     address: contact.address || '',
     createdAt: contact.created_at,
     date: formatBackendDate(contact.created_at),
-    status: 'new',
+    status: contact.pipeline_stage || 'new',
+    pipelineOrder,
     amount: contact.ai?.score ? String(contact.ai.score) : '0',
     ai: {
       status: contact.ai?.status || 'not_started',
@@ -100,6 +104,20 @@ function getScoreTone(score) {
   if (score >= 80) return 'text-emerald-700';
   if (score >= 50) return 'text-amber-700';
   return 'text-slate-700';
+}
+
+function getPipelineOrderValue(lead) {
+  if (Number.isFinite(lead?.pipelineOrder)) return lead.pipelineOrder;
+  const createdAt = new Date(lead?.createdAt);
+  if (Number.isNaN(createdAt.getTime())) return Number.MAX_SAFE_INTEGER;
+  return createdAt.getTime();
+}
+
+function comparePipelineOrder(a, b) {
+  const orderA = getPipelineOrderValue(a);
+  const orderB = getPipelineOrderValue(b);
+  if (orderA !== orderB) return orderA - orderB;
+  return String(a?.id || '').localeCompare(String(b?.id || ''));
 }
 
 function StatCard({ icon: Icon, label, value, subText }) {
@@ -619,15 +637,99 @@ const Pipeline = () => {
   }, [selectedLead?.id, selectedLead?.ai?.status, token]);
 
   const onDragEnd = (result) => {
-    const { destination, draggableId } = result;
+    const { destination, source, draggableId } = result;
     if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
 
-    setLeads((prev) =>
-      prev.map((lead) =>
-        lead.id === draggableId ? { ...lead, status: destination.droppableId } : lead
-      )
-    );
+    const sourceStage = source.droppableId;
+    const destinationStage = destination.droppableId;
+
+    const sourceLeads = leads
+      .filter((lead) => lead.status === sourceStage)
+      .sort(comparePipelineOrder);
+    const destinationLeads =
+      sourceStage === destinationStage
+        ? sourceLeads
+        : leads
+            .filter((lead) => lead.status === destinationStage)
+            .sort(comparePipelineOrder);
+
+    const movingIndex = sourceLeads.findIndex((lead) => lead.id === draggableId);
+    if (movingIndex === -1) return;
+
+    const [movedLead] = sourceLeads.splice(movingIndex, 1);
+
+    if (sourceStage === destinationStage) {
+      sourceLeads.splice(destination.index, 0, movedLead);
+      const updatedStage = sourceLeads.map((lead, index) => ({
+        ...lead,
+        status: sourceStage,
+        pipelineOrder: index,
+      }));
+
+      const updatedMap = new Map(updatedStage.map((lead) => [lead.id, lead]));
+      const nextLeads = leads.map((lead) => {
+        const updated = updatedMap.get(lead.id);
+        return updated
+          ? { ...lead, status: updated.status, pipelineOrder: updated.pipelineOrder }
+          : lead;
+      });
+
+      setLeads(nextLeads);
+      void persistPipelineUpdates(updatedStage);
+      return;
+    }
+
+    destinationLeads.splice(destination.index, 0, { ...movedLead, status: destinationStage });
+
+    const updatedSource = sourceLeads.map((lead, index) => ({
+      ...lead,
+      status: sourceStage,
+      pipelineOrder: index,
+    }));
+    const updatedDestination = destinationLeads.map((lead, index) => ({
+      ...lead,
+      status: destinationStage,
+      pipelineOrder: index,
+    }));
+
+    const updatedAll = [...updatedSource, ...updatedDestination];
+    const updatedMap = new Map(updatedAll.map((lead) => [lead.id, lead]));
+    const nextLeads = leads.map((lead) => {
+      const updated = updatedMap.get(lead.id);
+      return updated
+        ? { ...lead, status: updated.status, pipelineOrder: updated.pipelineOrder }
+        : lead;
+    });
+
+    setLeads(nextLeads);
+    void persistPipelineUpdates(updatedAll);
   };
+
+  async function persistPipelineUpdates(updatedLeads) {
+    if (!token || !updatedLeads?.length) return;
+
+    try {
+      await Promise.all(
+        updatedLeads.map((lead) =>
+          contactsApi.updatePipeline(
+            lead.contactId,
+            { stage: lead.status, order: lead.pipelineOrder ?? 0 },
+            token
+          )
+        )
+      );
+    } catch (updateError) {
+      console.error('Failed to save pipeline updates:', updateError);
+      setError(updateError.message || 'Failed to save pipeline changes.');
+      await loadContacts(false);
+    }
+  }
 
   async function handleEnrich(contactId) {
     try {
@@ -1041,7 +1143,9 @@ const Pipeline = () => {
                 <div className="overflow-x-auto pb-2">
                   <div className="flex min-w-max gap-5">
                     {stages.map((stage) => {
-                      const stageLeads = filteredLeads.filter((lead) => lead.status === stage.id);
+                      const stageLeads = filteredLeads
+                        .filter((lead) => lead.status === stage.id)
+                        .sort(comparePipelineOrder);
 
                       return (
                         <div key={stage.id} className="w-[300px] shrink-0">

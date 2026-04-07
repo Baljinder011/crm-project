@@ -36,4 +36,14 @@ export const contactsApi = {
       },
     });
   },
+
+  updatePipeline(id, payload, token) {
+    return apiRequest(`/contacts/${id}/pipeline`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  },
 };

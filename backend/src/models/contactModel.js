@@ -34,6 +34,13 @@ function mapContactRow(row, options = {}) {
     address: row.address,
     message: row.message,
     created_at: row.created_at,
+    pipeline_stage: row.pipeline_stage || 'new',
+    pipeline_order:
+      typeof row.pipeline_order === 'number'
+        ? row.pipeline_order
+        : row.pipeline_order !== null && row.pipeline_order !== undefined
+          ? Number(row.pipeline_order)
+          : null,
     ai: hasAiTables
       ? {
           status: row.ai_status || 'not_started',
@@ -97,7 +104,9 @@ async function getAllContacts() {
         c.phone,
         c.address,
         c.message,
-        c.created_at
+        c.created_at,
+        c.pipeline_stage,
+        c.pipeline_order
       FROM contacts c
       ORDER BY c.created_at DESC, c.id DESC
     `);
@@ -115,6 +124,8 @@ async function getAllContacts() {
       c.address,
       c.message,
       c.created_at,
+      c.pipeline_stage,
+      c.pipeline_order,
       aid.status AS ai_status,
       aid.intent,
       aid.industry,
@@ -163,11 +174,13 @@ async function getContactById(contactId) {
           c.id,
           c.full_name,
           c.company,
-          c.email,
-          c.phone,
-          c.address,
-          c.message,
-          c.created_at
+      c.email,
+      c.phone,
+      c.address,
+      c.message,
+      c.created_at,
+      c.pipeline_stage,
+      c.pipeline_order
         FROM contacts c
         WHERE c.id = $1
         LIMIT 1
@@ -188,6 +201,8 @@ async function getContactById(contactId) {
       c.address,
       c.message,
       c.created_at,
+      c.pipeline_stage,
+      c.pipeline_order,
       aid.status AS ai_status,
       aid.intent,
       aid.industry,
@@ -226,7 +241,23 @@ async function getContactById(contactId) {
   return mapContactRow(rows[0], { hasAiTables: true });
 }
 
+async function updateContactPipeline(contactId, stage, order) {
+  const { rows } = await pool.query(
+    `
+      UPDATE contacts
+      SET pipeline_stage = $2,
+          pipeline_order = $3
+      WHERE id = $1
+      RETURNING id, pipeline_stage, pipeline_order
+    `,
+    [contactId, stage, order]
+  );
+
+  return rows[0] || null;
+}
+
 module.exports = {
   getAllContacts,
   getContactById,
+  updateContactPipeline,
 };
