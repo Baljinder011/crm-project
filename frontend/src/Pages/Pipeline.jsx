@@ -26,6 +26,7 @@ import {
   BadgeCheck,
   Clock3,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { contactsApi } from '../services/contactsApi';
 
@@ -171,7 +172,7 @@ function DetailBox({ icon: Icon, title, children, className = '' }) {
 function LeadDetailPanel({ lead, onRefresh, busyId, onEnrich }) {
   if (!lead) {
     return (
-      <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/80 p-8 text-sm text-slate-500 shadow-sm xl:max-h-[calc(100vh-18rem)] xl:overflow-y-auto xl:pr-2">
+      <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/80 p-8 text-sm text-slate-500 shadow-sm">
         Select a contact to see the AI brief.
       </div>
     );
@@ -180,7 +181,7 @@ function LeadDetailPanel({ lead, onRefresh, busyId, onEnrich }) {
   const scoreWidth = `${Math.max(0, Math.min(100, lead.ai.score || 0))}%`;
 
   return (
-    <div className="space-y-5 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:pr-2">
+    <div className="space-y-5">
       <div className="rounded-[30px] border border-slate-200/80 bg-white/95 p-6 shadow-sm">
         <div className="flex flex-col gap-5">
           <div className="flex items-start justify-between gap-4">
@@ -403,10 +404,11 @@ function LeadDetailPanel({ lead, onRefresh, busyId, onEnrich }) {
 
 const Pipeline = () => {
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   const [leads, setLeads] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('board');
+  const [viewMode, setViewMode] = useState('table');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -872,8 +874,8 @@ const Pipeline = () => {
           ) : null}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px] xl:items-start">
-          <div className="min-w-0 space-y-6 xl:sticky xl:top-6 xl:self-start">
+        <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <div className="rounded-[30px] border border-slate-200/80 bg-white/95 p-5 shadow-sm">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
@@ -914,7 +916,7 @@ const Pipeline = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                {/* <div className="flex flex-wrap items-center gap-3">
                   <div className="relative" ref={datePickerRef}>
                     <button
                       onClick={() => setShowDatePicker((prev) => !prev)}
@@ -1081,7 +1083,7 @@ const Pipeline = () => {
                     <Plus size={16} />
                     Add Lead
                   </button>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -1109,7 +1111,7 @@ const Pipeline = () => {
                         filteredLeads.map((lead) => (
                           <tr
                             key={lead.id}
-                            onClick={() => setSelectedLeadId(lead.id)}
+                            onClick={() => navigate(`/pipeline/${lead.id}`)}
                             className={`cursor-pointer transition hover:bg-slate-50 ${
                               selectedLead?.id === lead.id ? 'bg-indigo-50/60' : ''
                             }`}
@@ -1182,7 +1184,7 @@ const Pipeline = () => {
                                           ref={draggableProvided.innerRef}
                                           {...draggableProvided.draggableProps}
                                           {...draggableProvided.dragHandleProps}
-                                          onClick={() => setSelectedLeadId(lead.id)}
+                                          onClick={() => navigate(`/pipeline/${lead.id}`)}
                                           className={`mb-3 cursor-pointer rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 ${
                                             selectedLead?.id === lead.id
                                               ? 'ring-2 ring-indigo-200'
@@ -1284,12 +1286,6 @@ const Pipeline = () => {
             )}
           </div>
 
-          <LeadDetailPanel
-            lead={selectedLead}
-            onRefresh={() => loadContacts(true)}
-            busyId={busyId}
-            onEnrich={handleEnrich}
-          />
         </div>
       </div>
     </AppLayout>
