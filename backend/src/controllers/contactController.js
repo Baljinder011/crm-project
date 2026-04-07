@@ -1,5 +1,5 @@
 const { asyncHandler } = require('../utils/asyncHandler');
-const { getAllContacts, getContactById } = require('../models/contactModel');
+const { getAllContacts, getContactById, updateContactPipeline } = require('../models/contactModel');
 const { enqueueLeadEnrichment } = require('../services/leadQueueService');
 
 exports.getContacts = asyncHandler(async (_req, res) => {
@@ -84,5 +84,37 @@ exports.enrichAllContacts = asyncHandler(async (req, res) => {
     success: true,
     message: `${jobs.length} contact enrichment jobs queued successfully.`,
     count: jobs.length,
+  });
+});
+
+exports.updatePipeline = asyncHandler(async (req, res) => {
+  const contactId = Number(req.params.id);
+  const { stage, order } = req.body || {};
+
+  const allowedStages = new Set(['new', 'scheduled', 'negotiation', 'proposal', 'won', 'lost']);
+
+  if (!allowedStages.has(stage)) {
+    const error = new Error('Invalid pipeline stage.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!Number.isInteger(order) || order < 0) {
+    const error = new Error('Invalid pipeline order.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const updated = await updateContactPipeline(contactId, stage, order);
+
+  if (!updated) {
+    const error = new Error('Contact not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  res.status(200).json({
+    success: true,
+    pipeline: updated,
   });
 });
