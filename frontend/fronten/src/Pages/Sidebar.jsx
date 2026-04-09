@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, Calendar, BookOpen, BarChart3, Settings, LogOut, Bell, GitBranch, MailCheck } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, BookOpen, BarChart3, Settings, LogOut, Bell, GitBranch } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,7 +10,6 @@ const primaryNav = [
   { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen, path: '/knowledge' },
   { id: 'reports', label: 'Reports', icon: BarChart3, path: '/reports' },
   { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },
-  { id: 'mail-marketing', label: 'Mail Marketing', icon: MailCheck, path: '/mail-marketing' },
   { id: 'pipeline', label: 'Contacts', icon: GitBranch, path: '/pipeline' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
 ];
