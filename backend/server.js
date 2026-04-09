@@ -4,6 +4,7 @@ const { pool, testDatabaseConnection } = require('./src/config/db');
 const { startLeadEnrichmentWorker } = require('./src/workers/leadEnrichmentWorker');
 const { startLeadAutoEnrichmentScheduler } = require('./src/services/leadAutoEnrichmentService');
 const { runMigrations } = require('./runMigrations');
+const { startMailScheduler } = require('./src/services/mailSchedulerService');
 
 const PORT = process.env.PORT || 5000;
 
@@ -23,6 +24,8 @@ async function startServer() {
     if (String(process.env.RUN_LEAD_AUTO_ENRICH_SCHEDULER || 'true') !== 'false') {
       startLeadAutoEnrichmentScheduler();
     }
+
+    startMailScheduler();
 
     const shutdown = async (signal) => {
       console.log(`\n${signal} received. Closing server...`);

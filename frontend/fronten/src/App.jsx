@@ -15,7 +15,6 @@ import Settings from './Pages/Settings';
 import Notifications from './Pages/Notifications';
 import Pipeline from './Pages/Pipeline';
 import LeadDetail from './Pages/LeadDetail';
-import MailMarketing from './Pages/MailMarketing';
 
 function App() {
   return (
@@ -114,14 +113,6 @@ function App() {
           element={
             <ProtectedRoute>
               <Settings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/mail-marketing"
-          element={
-            <ProtectedRoute>
-              <MailMarketing />
             </ProtectedRoute>
           }
         />
