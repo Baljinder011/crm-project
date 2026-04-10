@@ -351,7 +351,7 @@ const MailMarketing = () => {
           )}
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.1fr_1.2fr]">
+        <section className="grid gap-6">
           <div className="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Filter size={16} />
@@ -490,7 +490,7 @@ const MailMarketing = () => {
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Lead score</p>
                     <p className="mt-2 text-2xl font-semibold text-slate-800">{selectedMail.leadScore || 0}</p>
@@ -509,7 +509,7 @@ const MailMarketing = () => {
                   </div>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
                   <div className="rounded-3xl border border-slate-200/70 bg-slate-50/70 p-5">
                     <h3 className="text-sm font-semibold text-slate-800">AI summary</h3>
                     <p className="mt-3 text-sm leading-6 text-slate-600">{selectedMail.leadSummary || 'No AI summary available yet.'}</p>
