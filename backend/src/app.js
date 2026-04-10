@@ -3,6 +3,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const leadRoutes = require('./routes/leadRoutes');
+const mailRoutes = require('./routes/mailRoutes');
 const embedFormRoutes = require('./routes/embedFormRoutes');
 const { notFoundHandler, errorHandler } = require('./middlewares/errorMiddleware');
 
@@ -36,6 +37,7 @@ const appCors = cors({
 app.use('/api/auth', appCors, authRoutes);
 app.use('/api/contacts', appCors, contactRoutes);
 app.use('/api/leads', appCors, leadRoutes);
+app.use('/api/mail', appCors, mailRoutes);
 
 // Public embed routes for external websites/scripts
 app.use('/api/embed', embedCors, embedFormRoutes);

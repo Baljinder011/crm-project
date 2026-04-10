@@ -3,7 +3,6 @@ const app = require('./src/app');
 const { pool, testDatabaseConnection } = require('./src/config/db');
 const { startLeadEnrichmentWorker } = require('./src/workers/leadEnrichmentWorker');
 const { startLeadAutoEnrichmentScheduler } = require('./src/services/leadAutoEnrichmentService');
-const { runMigrations } = require('./runMigrations');
 const { startMailScheduler } = require('./src/services/mailSchedulerService');
 
 const PORT = process.env.PORT || 5000;
@@ -11,7 +10,6 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
   try {
     await testDatabaseConnection();
-    await runMigrations();
 
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
