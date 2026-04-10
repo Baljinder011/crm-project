@@ -1,7 +1,10 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color-scheme: light;
+  --sidebar-width: 18rem;
 }
 
 body {
@@ -12,4 +15,153 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.ml-72 {
+  margin-left: var(--sidebar-width, 18rem);
+}
+
+/* Dark-mode overrides for existing utility classes */
+.dark .bg-white {
+  background-color: #111827;
+}
+
+.dark .bg-white\/95 {
+  background-color: rgb(17 24 39 / 0.95);
+}
+
+.dark .bg-white\/90 {
+  background-color: rgb(17 24 39 / 0.9);
+}
+
+.dark .bg-white\/80 {
+  background-color: rgb(17 24 39 / 0.8);
+}
+
+.dark .bg-slate-50 {
+  background-color: #0f172a;
+}
+
+.dark .bg-slate-50\/95 {
+  background-color: rgb(15 23 42 / 0.95);
+}
+
+.dark .bg-slate-50\/90 {
+  background-color: rgb(15 23 42 / 0.9);
+}
+
+.dark .bg-slate-50\/80 {
+  background-color: rgb(15 23 42 / 0.8);
+}
+
+.dark .bg-slate-50\/70 {
+  background-color: rgb(15 23 42 / 0.7);
+}
+
+.dark .bg-slate-100 {
+  background-color: #0b1120;
+}
+
+.dark .bg-slate-100\/80 {
+  background-color: rgb(15 23 42 / 0.8);
+}
+
+.dark .bg-slate-200 {
+  background-color: #111827;
+}
+
+.dark .bg-slate-300 {
+  background-color: #1e293b;
+}
+
+.dark .border-slate-100 {
+  border-color: #1f2937;
+}
+
+.dark .border-slate-200 {
+  border-color: #334155;
+}
+
+.dark .border-slate-200\/80 {
+  border-color: rgb(51 65 85 / 0.8);
+}
+
+.dark .border-slate-200\/70 {
+  border-color: rgb(51 65 85 / 0.7);
+}
+
+.dark .border-slate-300 {
+  border-color: #475569;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1f2937;
+}
+
+.dark .text-slate-900 {
+  color: #f8fafc;
+}
+
+.dark .text-slate-800 {
+  color: #f1f5f9;
+}
+
+.dark .text-slate-700 {
+  color: #e2e8f0;
+}
+
+.dark .text-slate-600 {
+  color: #cbd5e1;
+}
+
+.dark .text-slate-500 {
+  color: #94a3b8;
+}
+
+.dark .text-slate-400 {
+  color: #64748b;
+}
+
+.dark .placeholder\:text-slate-400::placeholder {
+  color: #64748b;
+}
+
+.dark .hover\:bg-white:hover {
+  background-color: #1e293b;
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: #1e293b;
+}
+
+.dark .hover\:bg-slate-50\/70:hover {
+  background-color: rgb(30 41 59 / 0.8);
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: #1e293b;
+}
+
+.dark .hover\:bg-slate-100\/80:hover {
+  background-color: rgb(30 41 59 / 0.8);
+}
+
+.dark .hover\:text-slate-600:hover {
+  color: #cbd5e1;
+}
+
+.dark .hover\:text-slate-700:hover {
+  color: #e2e8f0;
+}
+
+.dark .hover\:text-slate-800:hover {
+  color: #f1f5f9;
+}
+
+.dark .hover\:text-slate-900:hover {
+  color: #f8fafc;
 }

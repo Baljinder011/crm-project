@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell, ChevronDown, Search } from 'lucide-react';
+import { Bell, ChevronDown, Moon, Search, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../Pages/Sidebar';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const AppLayout = ({ eyebrow = 'CRM Overview', title = 'Dashboard', description, children }) => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
   const notificationsRef = useRef(null);
@@ -69,7 +71,7 @@ const AppLayout = ({ eyebrow = 'CRM Overview', title = 'Dashboard', description,
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(1200px_600px_at_-10%_-20%,#dbeafe_0%,transparent_60%),radial-gradient(900px_600px_at_120%_-10%,#e0f2fe_0%,transparent_55%)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(1200px_600px_at_-10%_-20%,#dbeafe_0%,transparent_60%),radial-gradient(900px_600px_at_120%_-10%,#e0f2fe_0%,transparent_55%)] dark:bg-[radial-gradient(1200px_600px_at_-10%_-20%,rgba(37,150,190,0.12)_0%,transparent_60%),radial-gradient(900px_600px_at_120%_-10%,rgba(103,11,184,0.14)_0%,transparent_55%)]" />
 
       <Sidebar />
 
@@ -92,6 +94,15 @@ const AppLayout = ({ eyebrow = 'CRM Overview', title = 'Dashboard', description,
                   className="w-full rounded-full border border-slate-200 bg-white/90 py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </div>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white/80 text-slate-500 shadow-sm transition hover:text-slate-700 dark:border-slate-700/60 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:text-slate-100"
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
               <div className="relative" ref={notificationsRef}>
                 <button
                   type="button"
