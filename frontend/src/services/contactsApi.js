@@ -19,6 +19,15 @@ export const contactsApi = {
     });
   },
 
+  getContactAiEvents(id, token, limit = 100) {
+    return apiRequest(`/contacts/${id}/ai-events?limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
   enrichContact(id, token) {
     return apiRequest(`/contacts/${id}/enrich`, {
       method: 'POST',

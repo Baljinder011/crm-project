@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
-const { getOpenAIClient } = require('../config/openai');
-const { buildModelOptions, MODEL } = require('../ai/modelConfig');
+const { callRawLlmForJson } = require('../config/aiClient');
+const { MODEL } = require('../ai/modelConfig');
 const {
   getMailMessageById,
   updateMailClassification,
@@ -71,11 +71,12 @@ const MAIL_SCHEMA = {
   ],
 };
 
-function getResponseText(response) {
-  if (response.output_text) return response.output_text;
-  const messageItem = response.output?.find((item) => item.type === 'message');
-  const textItem = messageItem?.content?.find((item) => item.type === 'output_text');
-  return textItem?.text || '';
+function schemaInstruction(name, schema) {
+  return [
+    `Return valid JSON only for schema: ${name}.`,
+    'No markdown. No code fences. No explanation.',
+    `Schema:\n${JSON.stringify(schema, null, 2)}`,
+  ].join('\n\n');
 }
 
 function getReplyThreshold() {
@@ -161,61 +162,57 @@ async function classifyMail(message) {
     };
   }
 
-  const client = getOpenAIClient();
   const safeTextBody = truncateText(message.textBody || '', 3000);
   const safeHtmlBodyText = truncateText(stripHtml(message.htmlBody || ''), 3000);
 
-  const response = await client.responses.create({
-    ...buildModelOptions(),
-    max_output_tokens: 500,
-    input: [
+  const result = await callRawLlmForJson(
+    [
       {
-        role: 'developer',
+        role: 'system',
         content:
-          'You are an email triage and sales-reply assistant. Be conservative. Only mark shouldReply=true when the email is clearly a genuine inbound lead, clearly relevant to the company profile, and a reply can be useful and safe. Never treat newsletters, job applications, support complaints, vendor pitches, personal notes, or ambiguous emails as auto-reply leads. Return strict JSON only.',
+          'You are an email triage and sales-reply assistant. Be conservative. Only mark shouldReply=true when the email is clearly a genuine inbound lead, clearly relevant to the company profile, and a reply can be useful and safe. Never treat newsletters, job applications, support complaints, vendor pitches, personal notes, or ambiguous emails as auto-reply leads.',
       },
       {
         role: 'user',
-        content: JSON.stringify(
-          {
-            companyProfile: COMPANY_PROFILE,
-            instructions: {
-              objective:
-                'Find genuine inbound lead emails relevant to the company and draft a useful, short, human-sounding first reply.',
-              replyTone: 'professional, warm, concise, business development oriented',
-              mustAvoid: [
-                'inventing services or pricing',
-                'making commitments or deadlines',
-                'claiming certainty when requirements are unclear',
-                'replying to spam or irrelevant emails',
-              ],
+        content: [
+          schemaInstruction('mail_classification', MAIL_SCHEMA),
+          JSON.stringify(
+            {
+              companyProfile: COMPANY_PROFILE,
+              instructions: {
+                objective:
+                  'Find genuine inbound lead emails relevant to the company and draft a useful, short, human-sounding first reply.',
+                replyTone: 'professional, warm, concise, business development oriented',
+                mustAvoid: [
+                  'inventing services or pricing',
+                  'making commitments or deadlines',
+                  'claiming certainty when requirements are unclear',
+                  'replying to spam or irrelevant emails',
+                ],
+              },
+              email: {
+                subject: message.subject,
+                fromName: message.fromName,
+                fromEmail: message.fromEmail,
+                receivedAt: message.receivedAt,
+                textBody: safeTextBody,
+                htmlBodyText: safeHtmlBodyText,
+              },
+              heuristicSpamReasons,
             },
-            email: {
-              subject: message.subject,
-              fromName: message.fromName,
-              fromEmail: message.fromEmail,
-              receivedAt: message.receivedAt,
-              textBody: safeTextBody,
-              htmlBodyText: safeHtmlBodyText,
-            },
-            heuristicSpamReasons,
-          },
-          null,
-          2
-        ),
+            null,
+            2
+          ),
+        ].join('\n\n'),
       },
     ],
-    text: {
-      format: {
-        type: 'json_schema',
-        name: 'mail_classification',
-        strict: true,
-        schema: MAIL_SCHEMA,
-      },
-    },
-  });
+    {
+      model: MODEL,
+      temperature: 0.2,
+    }
+  );
 
-  const parsed = JSON.parse(getResponseText(response));
+  const parsed = result.json;
   const companyFit = Boolean(parsed.companyFit);
   const confidence = Number(parsed.confidence || 0);
   const isSpam = Boolean(parsed.isSpam);
@@ -233,7 +230,7 @@ async function classifyMail(message) {
     aiStatus: 'completed',
     classification: {
       ...parsed,
-      source: 'openai',
+      source: 'local_ai',
       model: MODEL,
       threshold: getReplyThreshold(),
       heuristicSpamReasons,
@@ -265,84 +262,130 @@ async function syncInbox() {
   return saved;
 }
 
-async function processMailById(id) {
-  const mail = await getMailMessageById(id);
-  if (!mail) throw new Error('Mail not found.');
+async function processMailMessage(messageId) {
+  const message = await getMailMessageById(messageId);
 
-  const result = await classifyMail(mail);
-  return updateMailClassification(id, result);
+  if (!message) {
+    throw new Error(`Mail message ${messageId} not found.`);
+  }
+
+  const classification = await classifyMail(message);
+
+  await updateMailClassification(messageId, {
+    aiStatus: classification.aiStatus,
+    isSpam: classification.isSpam,
+    spamScore: classification.spamScore,
+    spamReasons: classification.spamReasons,
+    category: classification.category,
+    companyFit: classification.companyFit,
+    leadScore: classification.leadScore,
+    confidence: classification.confidence,
+    shouldReply: classification.shouldReply,
+    matchedServices: classification.matchedServices,
+    extractedRequirements: classification.extractedRequirements,
+    leadSummary: classification.leadSummary,
+    suggestedReplySubject: classification.suggestedReplySubject,
+    suggestedReplyHtml: classification.suggestedReplyHtml,
+    suggestedReplyText: classification.suggestedReplyText,
+    classification,
+  });
+
+  return classification;
 }
 
 async function processRecentPendingMails(limit = 25) {
-  const items = await listMailMessages({ limit, replyStatus: 'not_sent' });
-  const processed = [];
+  const mails = await listMailMessages({
+    limit,
+    aiStatus: 'pending',
+  });
 
-  for (const item of items) {
-    if (item.aiStatus === 'completed' && item.category) {
-      processed.push(item);
-      continue;
+  const results = [];
+
+  for (const mail of mails) {
+    try {
+      const result = await processMailMessage(mail.id);
+      results.push({ id: mail.id, ok: true, result });
+    } catch (error) {
+      await updateMailClassification(mail.id, {
+        aiStatus: 'failed',
+        classification: {
+          error: error.message,
+          model: MODEL,
+        },
+      });
+
+      results.push({ id: mail.id, ok: false, error: error.message });
     }
-
-    processed.push(await processMailById(item.id));
   }
 
-  return processed;
+  return results;
 }
 
-async function sendReplyForMail(id, options = {}) {
-  const mail = await getMailMessageById(id);
-  if (!mail) throw new Error('Mail not found.');
+async function sendReply(messageId) {
+  const message = await getMailMessageById(messageId);
 
-  if (mail.replyStatus === 'sent') {
-    return mail;
+  if (!message) {
+    throw new Error(`Mail message ${messageId} not found.`);
   }
 
-  const processed = mail.aiStatus === 'completed' ? mail : await processMailById(id);
-
-  if (!processed.shouldReply) {
-    return markReplySkipped(id, 'not_safe_for_auto_reply');
+  if (!message.shouldReply) {
+    await markReplySkipped(messageId, 'AI marked this message as not eligible for auto reply.');
+    return { skipped: true };
   }
 
-  if (!processed.fromEmail) {
-    return markReplySkipped(id, 'missing_recipient');
+  if (!message.fromEmail) {
+    await markReplySkipped(messageId, 'Sender email missing.');
+    return { skipped: true };
   }
 
   const transporter = getTransporter();
   const mailbox = getMailboxConfig();
+
   const fromName = process.env.MAIL_FROM_NAME || COMPANY_PROFILE.name;
   const fromAddress = process.env.MAIL_FROM || mailbox.mailboxEmail;
 
-  const info = await transporter.sendMail({
-    from: `${fromName} <${fromAddress}>`,
-    to: processed.fromEmail,
-    subject: options.subject || processed.suggestedReplySubject || `Re: ${processed.subject}`,
-    text: options.text || processed.suggestedReplyText || undefined,
-    html: options.html || processed.suggestedReplyHtml || undefined,
-    inReplyTo: processed.messageId || undefined,
-    references: processed.threadKey || processed.messageId || undefined,
+  await transporter.sendMail({
+    from: `"${fromName}" <${fromAddress}>`,
+    to: message.fromEmail,
+    subject: message.suggestedReplySubject || `Re: ${message.subject || 'Your inquiry'}`,
+    text: message.suggestedReplyText || '',
+    html: message.suggestedReplyHtml || '',
+    replyTo: fromAddress,
+    inReplyTo: message.messageIdHeader || undefined,
+    references: message.messageIdHeader || undefined,
   });
 
-  return markReplySent(id, info.messageId || null);
+  await markReplySent(messageId);
+
+  return { sent: true };
 }
 
-async function autoReplyEligibleMails(limit = 15) {
-  const processed = await processRecentPendingMails(limit);
-  const sent = [];
+async function autoReplyEligibleMails(limit = 10) {
+  const mails = await listMailMessages({
+    limit,
+    shouldReply: true,
+    replyStatus: 'pending',
+  });
 
-  for (const mail of processed) {
-    if (mail.shouldReply && mail.replyStatus === 'not_sent') {
-      sent.push(await sendReplyForMail(mail.id));
+  const results = [];
+
+  for (const mail of mails) {
+    try {
+      const result = await sendReply(mail.id);
+      results.push({ id: mail.id, ok: true, result });
+    } catch (error) {
+      await markReplySkipped(mail.id, error.message);
+      results.push({ id: mail.id, ok: false, error: error.message });
     }
   }
 
-  return sent;
+  return results;
 }
 
 module.exports = {
-  COMPANY_PROFILE,
   syncInbox,
-  processMailById,
+  processMailMessage,
   processRecentPendingMails,
-  sendReplyForMail,
   autoReplyEligibleMails,
+  sendReply,
 };

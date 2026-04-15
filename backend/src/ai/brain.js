@@ -1,67 +1,97 @@
-const { getOpenAIClient } = require('../config/openai');
-const { buildModelOptions } = require('./modelConfig');
+const { callRawLlmForJson, askWebsite } = require('../config/aiClient');
+const { MODEL } = require('./modelConfig');
 const { CLASSIFICATION_SCHEMA, ENRICHMENT_SCHEMA } = require('./schemas');
 const { buildClassificationMessages, buildEnrichmentMessages } = require('./prompts');
-const {
-  getWebSearchTools,
-  getWebSearchInclude,
-  extractResponseText,
-  extractWebSources,
-} = require('./tools');
+
+function schemaToInstruction(name, schema) {
+  return [
+    `Return valid JSON only for schema: ${name}.`,
+    'Do not include markdown, explanation, or code fences.',
+    `Schema:\n${JSON.stringify(schema, null, 2)}`,
+  ].join('\n\n');
+}
 
 async function classifyLead(contact) {
-  const client = getOpenAIClient();
-
-  const response = await client.responses.create({
-    ...buildModelOptions(),
-    input: buildClassificationMessages(contact),
-    text: {
-      format: {
-        type: 'json_schema',
-        name: 'lead_classification',
-        strict: true,
-        schema: CLASSIFICATION_SCHEMA,
+  const response = await callRawLlmForJson(
+    [
+      {
+        role: 'system',
+        content:
+          'You are an internal CRM lead-classification assistant. Use only provided lead details. Do not invent business facts.',
       },
-      verbosity: 'low',
-    },
-  });
+      {
+        role: 'user',
+        content: [
+          schemaToInstruction('lead_classification', CLASSIFICATION_SCHEMA),
+          JSON.stringify(buildClassificationMessages(contact), null, 2),
+        ].join('\n\n'),
+      },
+    ],
+    { model: MODEL, temperature: 0.1 }
+  );
 
-  return JSON.parse(extractResponseText(response));
+  return response.json;
 }
 
 async function enrichLead(contact, classification) {
-  const client = getOpenAIClient();
+  let websiteResearch = '';
+  const researchSources = [];
 
-  const companyHint = [contact.company, contact.email?.split('@')?.[1], contact.address]
-    .filter(Boolean)
-    .join(' | ');
+  const candidateUrl =
+    contact?.website ||
+    contact?.companyWebsite ||
+    contact?.company_website ||
+    null;
 
-  const response = await client.responses.create({
-    ...buildModelOptions(),
-    tools: getWebSearchTools(),
-    include: getWebSearchInclude(),
-    input: buildEnrichmentMessages(contact, classification),
-    text: {
-      format: {
-        type: 'json_schema',
-        name: 'lead_enrichment',
-        strict: true,
-        schema: ENRICHMENT_SCHEMA,
+  if (candidateUrl) {
+    try {
+      const question = `Research this company website and summarize: what the company does, likely business needs, likely buying signals, and the best next sales action for this lead. Lead details: ${JSON.stringify(
+        { contact, classification },
+        null,
+        2
+      )}`;
+
+      const agentResult = await askWebsite(candidateUrl, question);
+      websiteResearch = agentResult.answer || '';
+      researchSources.push({
+        title: candidateUrl,
+        url: candidateUrl,
+      });
+    } catch (_) {
+      // fail soft; enrichment can still continue without website research
+    }
+  }
+
+  const response = await callRawLlmForJson(
+    [
+      {
+        role: 'system',
+        content:
+          'You are an internal CRM lead-enrichment assistant. Be conservative. Never invent facts. If website research is missing or weak, clearly stay cautious.',
       },
-      verbosity: 'low',
-    },
-  });
+      {
+        role: 'user',
+        content: [
+          schemaToInstruction('lead_enrichment', ENRICHMENT_SCHEMA),
+          JSON.stringify(buildEnrichmentMessages(contact, classification), null, 2),
+          `Website research:\n${websiteResearch || 'No website research available.'}`,
+          `Preferred research sources:\n${JSON.stringify(researchSources, null, 2)}`,
+        ].join('\n\n'),
+      },
+    ],
+    { model: MODEL, temperature: 0.2 }
+  );
 
-  const enrichment = JSON.parse(extractResponseText(response));
-  const toolSources = extractWebSources(response);
+  const enrichment = response.json;
 
-  if (!enrichment.researchSources?.length) {
-    enrichment.researchSources = toolSources;
+  if (!Array.isArray(enrichment.researchSources) || !enrichment.researchSources.length) {
+    enrichment.researchSources = researchSources;
   }
 
   enrichment.searchMetadata = {
-    companyHint,
-    toolSources,
+    candidateUrl,
+    websiteResearch,
+    researchSources: enrichment.researchSources,
   };
 
   return enrichment;

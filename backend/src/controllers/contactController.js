@@ -1,5 +1,10 @@
 const { asyncHandler } = require('../utils/asyncHandler');
-const { getAllContacts, getContactById, updateContactPipeline } = require('../models/contactModel');
+const {
+  getAllContacts,
+  getContactById,
+  updateContactPipeline,
+} = require('../models/contactModel');
+const { getLeadAiEvents } = require('../models/leadModel');
 const { enqueueLeadEnrichment } = require('../services/leadQueueService');
 
 exports.getContacts = asyncHandler(async (_req, res) => {
@@ -37,6 +42,25 @@ exports.getContactDetail = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     contact,
+  });
+});
+
+exports.getContactAiEvents = asyncHandler(async (req, res) => {
+  const contactId = Number(req.params.id);
+  const contact = await getContactById(contactId);
+
+  if (!contact) {
+    const error = new Error('Contact not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const limit = Number(req.query.limit || 100);
+  const events = await getLeadAiEvents(contactId, limit);
+
+  res.status(200).json({
+    success: true,
+    events,
   });
 });
 

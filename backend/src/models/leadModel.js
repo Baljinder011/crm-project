@@ -1,6 +1,39 @@
 const { pool } = require('../config/db');
 const { safeJsonParse } = require('../utils/safeJsonParse');
 
+function mapLeadEventRow(row) {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    contactId: row.contact_id,
+    stepName: row.step_name,
+    status: row.status,
+    model: row.model,
+    details: safeJsonParse(row.details, {}),
+    createdAt: row.created_at,
+  };
+}
+
+function getDefaultAiState() {
+  return {
+    status: 'not_started',
+    intent: null,
+    industry: null,
+    urgency: null,
+    score: 0,
+    confidence: 0,
+    companySummary: '',
+    aiSummary: '',
+    recommendedAction: '',
+    painPoints: [],
+    researchSources: [],
+    rawResearch: {},
+    lastEnrichedAt: null,
+    errorMessage: null,
+  };
+}
+
 function mapLeadRow(row) {
   if (!row) return null;
 
@@ -199,7 +232,7 @@ async function upsertLeadAiData(contactId, payload) {
 
   const values = [
     contactId,
-    payload.status,
+    payload.status || 'not_started',
     payload.intent || null,
     payload.industry || null,
     payload.urgency || null,
@@ -262,20 +295,42 @@ async function upsertLeadTask(contactId, task) {
 }
 
 async function createLeadAiEvent(contactId, stepName, status, details = {}, model = null) {
-  await pool.query(
+  const { rows } = await pool.query(
     `
       INSERT INTO lead_ai_events (contact_id, step_name, status, model, details)
       VALUES ($1, $2, $3, $4, $5::jsonb)
+      RETURNING *
     `,
     [contactId, stepName, status, model, JSON.stringify(details || {})]
   );
+
+  return mapLeadEventRow(rows[0]);
+}
+
+async function getLeadAiEvents(contactId, limit = 100) {
+  const safeLimit = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 200) : 100;
+
+  const { rows } = await pool.query(
+    `
+      SELECT id, contact_id, step_name, status, model, details, created_at
+      FROM lead_ai_events
+      WHERE contact_id = $1
+      ORDER BY created_at DESC, id DESC
+      LIMIT $2
+    `,
+    [contactId, safeLimit]
+  );
+
+  return rows.map(mapLeadEventRow);
 }
 
 module.exports = {
+  getDefaultAiState,
   listLeads,
   getLeadById,
   getRawContactById,
   upsertLeadAiData,
   upsertLeadTask,
   createLeadAiEvent,
+  getLeadAiEvents,
 };

@@ -4,6 +4,13 @@ const { pool, testDatabaseConnection } = require('./src/config/db');
 const { startLeadEnrichmentWorker } = require('./src/workers/leadEnrichmentWorker');
 const { startLeadAutoEnrichmentScheduler } = require('./src/services/leadAutoEnrichmentService');
 const { startMailScheduler } = require('./src/services/mailSchedulerService');
+const {
+  RAW_LLM_ENDPOINT,
+  FIRECRAWL_SCRAPE_ENDPOINT,
+  FIRECRAWL_CRAWL_ENDPOINT,
+  AI_AGENT_ENDPOINT,
+  AI_MODEL,
+} = require('./src/config/aiClient');
 
 const PORT = process.env.PORT || 5000;
 
@@ -13,6 +20,13 @@ async function startServer() {
 
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      console.log('[AI][CONFIG]', {
+        rawEndpoint: RAW_LLM_ENDPOINT,
+        rawModel: AI_MODEL,
+        scrapeEndpoint: FIRECRAWL_SCRAPE_ENDPOINT,
+        crawlEndpoint: FIRECRAWL_CRAWL_ENDPOINT,
+        agentEndpoint: AI_AGENT_ENDPOINT,
+      });
     });
 
     if (String(process.env.RUN_LEAD_WORKER || 'true') !== 'false') {

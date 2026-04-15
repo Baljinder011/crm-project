@@ -32,8 +32,56 @@ async function enqueueLeadEnrichment(contactId, requestedBy = 'system') {
   const jobId = `contact-${normalizedContactId}`;
 
   const existingJob = await leadQueue.getJob(jobId);
+
   if (existingJob) {
-    return existingJob;
+    const state = await existingJob.getState();
+
+    // only reuse if job is genuinely active/waiting/delayed
+    if (['waiting', 'active', 'delayed', 'prioritized', 'waiting-children'].includes(state)) {
+      await createLeadAiEvent(
+        normalizedContactId,
+        'enrichment_queue_reused',
+        'success',
+        {
+          requestedBy,
+          jobId,
+          state,
+        },
+        MODEL
+      );
+
+      return existingJob;
+    }
+
+    // remove stale completed/failed job so manual retry actually creates a fresh one
+    try {
+      await existingJob.remove();
+
+      await createLeadAiEvent(
+        normalizedContactId,
+        'stale_enrichment_job_removed',
+        'success',
+        {
+          requestedBy,
+          jobId,
+          previousState: state,
+        },
+        MODEL
+      );
+    } catch (error) {
+      await createLeadAiEvent(
+        normalizedContactId,
+        'stale_enrichment_job_remove_failed',
+        'failed',
+        {
+          requestedBy,
+          jobId,
+          previousState: state,
+          message: error?.message || 'Failed to remove stale job',
+        },
+        MODEL
+      );
+    }
   }
 
   await upsertLeadAiData(normalizedContactId, {
@@ -45,7 +93,7 @@ async function enqueueLeadEnrichment(contactId, requestedBy = 'system') {
     normalizedContactId,
     'enrichment_queued',
     'success',
-    { requestedBy },
+    { requestedBy, jobId },
     MODEL
   );
 
