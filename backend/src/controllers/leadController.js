@@ -1,6 +1,6 @@
 const { asyncHandler } = require('../utils/asyncHandler');
 const { listLeads, getLeadById } = require('../models/leadModel');
-const { enqueueLeadEnrichment } = require('../services/leadQueueService');
+const { enqueueLeadEnrichment } = require('../services/lead/leadQueueService');
 
 exports.getLeads = asyncHandler(async (_req, res) => {
   const leads = await listLeads();

@@ -1,10 +1,11 @@
 const {
   getRawContactById,
   upsertLeadAiData,
-} = require('../models/leadModel');
+} = require('../../models/leadModel');
+
 const { createFollowUpTask } = require('./leadTaskService');
-const { sendLeadAcknowledgementEmail } = require('./emailService');
-const { MODEL } = require('../ai/modelConfig');
+const { sendLeadAcknowledgementEmail } = require('../mail/emailService');
+const { MODEL } = require('../../ai/modelConfig');
 const {
   callRawLlm,
   callRawLlmForJson,
@@ -15,7 +16,7 @@ const {
   FIRECRAWL_SCRAPE_ENDPOINT,
   FIRECRAWL_CRAWL_ENDPOINT,
   AI_AGENT_ENDPOINT,
-} = require('../config/aiClient');
+} = require('../../config/aiClient');
 
 const CLASSIFICATION_SCHEMA = {
   type: 'object',

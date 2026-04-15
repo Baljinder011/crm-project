@@ -4,7 +4,7 @@ const {
   getProfile,
   forgotPassword,
   resetPassword,
-} = require('../services/authService');
+} = require('../services/auth/authService');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { ApiError } = require('../utils/ApiError');
 

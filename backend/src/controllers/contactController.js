@@ -5,7 +5,7 @@ const {
   updateContactPipeline,
 } = require('../models/contactModel');
 const { getLeadAiEvents } = require('../models/leadModel');
-const { enqueueLeadEnrichment } = require('../services/leadQueueService');
+const { enqueueLeadEnrichment } = require('../services/lead/leadQueueService');
 
 exports.getContacts = asyncHandler(async (_req, res) => {
   const contacts = await getAllContacts();

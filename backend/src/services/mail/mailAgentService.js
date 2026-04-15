@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
-const { callRawLlmForJson } = require('../config/aiClient');
-const { MODEL } = require('../ai/modelConfig');
+const { callRawLlmForJson } = require('../../config/aiClient');
+const { MODEL } = require('../../ai/modelConfig');
 const {
   getMailMessageById,
   updateMailClassification,
@@ -8,7 +8,7 @@ const {
   markReplySkipped,
   upsertMailMessage,
   listMailMessages,
-} = require('../models/mailModel');
+} = require('../../models/mailModel');
 const { fetchRecentInboxMessages, getMailboxConfig } = require('./mailInboxService');
 
 const COMPANY_PROFILE = {

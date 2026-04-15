@@ -1,4 +1,4 @@
-const { upsertLeadTask } = require('../models/leadModel');
+const { upsertLeadTask } = require('../../models/leadModel');
 
 function buildPriority(score = 0, urgency = 'medium') {
   if (score >= 80 || urgency === 'high') return 'high';

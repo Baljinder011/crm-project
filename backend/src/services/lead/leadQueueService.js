@@ -1,7 +1,7 @@
 const { Queue } = require('bullmq');
-const { createRedisConnection } = require('../config/redis');
-const { upsertLeadAiData, createLeadAiEvent } = require('../models/leadModel');
-const { MODEL } = require('../ai/modelConfig');
+const { createRedisConnection } = require('../../config/redis');
+const { upsertLeadAiData, createLeadAiEvent } = require('../../models/leadModel');
+const { MODEL } = require('../../ai/modelConfig');
 
 const LEAD_ENRICHMENT_QUEUE = 'lead-enrichment';
 

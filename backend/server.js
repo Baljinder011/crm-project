@@ -2,8 +2,8 @@ require('dotenv').config();
 const app = require('./src/app');
 const { pool, testDatabaseConnection } = require('./src/config/db');
 const { startLeadEnrichmentWorker } = require('./src/workers/leadEnrichmentWorker');
-const { startLeadAutoEnrichmentScheduler } = require('./src/services/leadAutoEnrichmentService');
-const { startMailScheduler } = require('./src/services/mailSchedulerService');
+const { startLeadAutoEnrichmentScheduler } = require('./src/services/lead/leadAutoEnrichmentService');
+const { startMailScheduler } = require('./src/services/mail/mailSchedulerService');
 const {
   RAW_LLM_ENDPOINT,
   FIRECRAWL_SCRAPE_ENDPOINT,

@@ -1,20 +1,20 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const { ApiError } = require('../utils/ApiError');
-const { signToken } = require('../utils/jwt');
-const { sendEmail } = require('../utils/sendEmail');
+const { ApiError } = require('../../utils/ApiError');
+const { signToken } = require('../../utils/jwt');
+const { sendEmail } = require('../../utils/sendEmail');
 const {
   findUserByEmail,
   findUserById,
   createUser,
   updateUserPassword,
-} = require('../models/userModel');
+} = require('../../models/userModel');
 const {
   createPasswordResetToken,
   invalidateActivePasswordResetTokens,
   findValidPasswordResetToken,
   markPasswordResetTokenUsed,
-} = require('../models/passwordResetModel');
+} = require('../../models/passwordResetModel');
 
 function sanitizeUser(user) {
   return {

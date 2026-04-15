@@ -1,8 +1,8 @@
 require('dotenv').config();
 const { Worker } = require('bullmq');
 const { createRedisConnection } = require('../config/redis');
-const { LEAD_ENRICHMENT_QUEUE } = require('../services/leadQueueService');
-const { runLeadEnrichment } = require('../services/leadAiService');
+const { LEAD_ENRICHMENT_QUEUE } = require('../services/lead/leadQueueService');
+const { runLeadEnrichment } = require('../services/lead/leadAiService');
 const { upsertLeadAiData, getLeadById } = require('../models/leadModel');
 
 let workerInstance = null;

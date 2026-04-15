@@ -1,4 +1,4 @@
-const { listAutoEnrichmentCandidates } = require('../models/contactModel');
+const { listAutoEnrichmentCandidates } = require('../../models/contactModel');
 const { enqueueLeadEnrichment } = require('./leadQueueService');
 
 let autoEnrichmentTimer = null;

@@ -7,7 +7,7 @@ const {
   sendReplyForMail,
   autoReplyEligibleMails,
   COMPANY_PROFILE,
-} = require('../services/mailAgentService');
+} = require('../services/mail/mailAgentService');
 
 exports.getMailSummary = asyncHandler(async (_req, res) => {
   const summary = await getMailSummary();

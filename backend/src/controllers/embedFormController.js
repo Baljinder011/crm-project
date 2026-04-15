@@ -5,7 +5,7 @@ const {
   getEmbedFormById,
   getEmbedFormByPublicKey,
 } = require('../models/embedFormModel');
-const { captureEmbeddedLead } = require('../services/embedCaptureService');
+const { captureEmbeddedLead } = require('../services/embed/embedCaptureService');
 
 function buildScript({ apiBaseUrl, publicKey }) {
   return `

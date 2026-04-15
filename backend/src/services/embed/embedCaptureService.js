@@ -1,9 +1,9 @@
 const {
   getEmbedFormByPublicKey,
   createEmbeddedContact,
-} = require('../models/embedFormModel');
-const { enqueueLeadEnrichment } = require('./leadQueueService');
-const { sendEmail } = require('../utils/sendEmail');
+} = require('../../models/embedFormModel');
+const { enqueueLeadEnrichment } = require('../lead/leadQueueService');
+const { sendEmail } = require('../../utils/sendEmail');
 
 function normalizeDomain(input = '') {
   return String(input || '')
